@@ -1,45 +1,13 @@
-# iCalEvents
-
-Simple Python 3 library to download, parse and query iCal sources.
-
-[![Jazzband](https://jazzband.co/static/img/badge.svg)](https://jazzband.co/)
-
-## Build info
-
-last push: ![run pytest](https://github.com/jazzband/icalevents/actions/workflows/python-test.yml/badge.svg)
-
-master: [![Run pytest](https://github.com/jazzband/icalevents/actions/workflows/python-test.yml/badge.svg?branch=master)](https://github.com/jazzband/icalevents/actions/workflows/python-test.yml)
-
-## Documentation
-
-https://icalevents.readthedocs.io/en/latest/
+# ical alarms to mqtt
 
 ## Usage
 
-### iCloud:
-
-```python
-
-from icalevents.icalevents import events
-
-es  = events(<iCloud URL>, fix_apple=True)
-```
-
-### Google:
-
-```python
-
-from icalevents.icalevents import events
-
-es  = events(<Google Calendar URL>)
-```
-
-# Contributing
-
-You will need [poetry](https://github.com/python-poetry/poetry) and [pre-commit](https://pre-commit.com/index.html) installed and than run.
 
 ```bash
-pre-commit install
+mkdir ical2mqtt
+git clone git@github.com:Eigenbaukombinat/ical_to_mqtt.git
+python3 -m venv .
+bin/pip install ical_to_mqtt/
+bin/ical_to_mqtt --help
 ```
 
-Happy contributing!
