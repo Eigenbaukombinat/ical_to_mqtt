@@ -10,15 +10,14 @@ import sys
 import time
 
 
-def setup_logging(level):
-    log = logging.getLogger()
-    log.setLevel(level)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    log.addHandler(handler)
-    return log
+level = logging.ERROR
+log = logging.getLogger()
+log.setLevel(level)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(level)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+log.addHandler(handler)
 
 
 def get_events(fn):
@@ -52,7 +51,7 @@ def dir_path(path):
     if os.path.isdir(path):
         return path
     else:
-        raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
+        raise argparse.ArgumentTypeError("readable_dir:%s is not a valid path" % path)
 
 
 def filter_multiple_alarms_by_next_occurrence(notifications):
@@ -169,11 +168,11 @@ def main():
     if config.timezone is not None:
         config.tz = pytz.timezone(config.timezone)
 
-    # setup logging with given value
-    level = logging.ERROR
+    # set logging level with given value
     if config.verbose:
         level = logging.DEBUG
-    log = setup_logging(level)
+        log.setLevel(level)
+        handler.setLevel(level)
 
     run(config)
 
