@@ -88,7 +88,7 @@ def send_mqtt(config, data):
     mqtt_client.connect(config.mqtt_broker)
     mqtt_client.publish(config.mqtt_topic, json.dumps(data))
 
-def main(config):
+def run(config):
     last_load = 0
     alarms_data = {}
 
@@ -146,7 +146,7 @@ def main(config):
         time.sleep(15)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Convert ics event alarms to mqtt messages and json data.')
     parser.add_argument('--calendar_path', dest='calendar_path', type=dir_path,
                         help='Location of your ics files (default: current working dir)',
@@ -175,8 +175,11 @@ if __name__ == '__main__':
         level = logging.DEBUG
     log = setup_logging(level)
 
-    main(config)
+    run(config)
 
+
+if __name__ == '__main__':
+    main()
 
 
 

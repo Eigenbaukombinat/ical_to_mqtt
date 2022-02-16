@@ -15,6 +15,11 @@ setup(
     author="nilo",
     url="https://github.com/Eigenbaukombinat/ical_to_mqtt",
     keywords=["iCal"],
+    entry_points={
+        "console_scripts": [
+            "ical2mqtt = ical_to_mqtt:main"
+        ]
+    },
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
