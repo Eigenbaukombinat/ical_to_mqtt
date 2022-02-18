@@ -54,13 +54,16 @@ def dir_path(path):
         raise argparse.ArgumentTypeError("readable_dir:%s is not a valid path" % path)
 
 
-def filter_multiple_alarms_by_next_occurrence(notifications):
+def filter_multiple_alarms_by_next_occurrence(notifications, config):
     # despite being different objects, events can
     # share the same UID, if they are recurring events, or have
     # more then 1 alarm defined.
-    # if we have this case, we only want the next alarm
+    # if we have this case, we only want the next alarm, but
+    # only from those in the future.
     event_alarms_dict = {}
     for alarm, event in notifications:
+        if event.start < now_tz(config):
+            continue
         _, existing = event_alarms_dict.get(alarm['uid'], (None, None))
         if existing:
             if event.time_left() < existing.time_left():
@@ -70,15 +73,37 @@ def filter_multiple_alarms_by_next_occurrence(notifications):
     return event_alarms_dict
 
 
+def set_alarm_uid(alarm, event):
+    alarm_uid = alarm['uid']
+    alarm_dt = str(alarm['alarm_dt'])
+    if alarm_uid is not None:
+        alarm_uid = str(alarm_uid)
+    else:
+        alarm_uid = f'{event.uid} - {alarm_dt}'
+    alarm['uid'] = alarm_uid
+
 
 def get_alarm_data(alarm, event):
+    time_left = str(event.time_left())
+    # translate
+    time_left = time_left.replace('days', 'Tage').replace('day', 'Tag')
+    # cut microseconds
+    time_left = time_left[:time_left.rfind('.')]
+    alarm_dt = str(alarm['alarm_dt'])
     data = dict(
         summary=alarm['summary'],
-        alarm_since=str(alarm['alarm_dt']),
+        description=alarm['description'],
+        action=alarm['action'],
+        alarm_since=alarm_dt,
         uid=str(alarm['uid']),
-        time_left_to_event=str(event.time_left()),
+        time_left_to_event=time_left,
+        seconds_left_to_event=event.time_left().seconds,
         event_start=str(event.start))
     return data
+
+def now_tz(config):
+    return datetime.datetime.now().astimezone(tz=config.tz)
+
 
 
 def send_mqtt(config, data):
@@ -108,11 +133,12 @@ def run(config):
             notifications = load_calendar_files(config.calendar_path)
             last_load = time.time()
 
-        now = datetime.datetime.now().astimezone(tz=config.tz)
+        now = now_tz(config)
         seen_uids = []
-        event_alarms_dict = filter_multiple_alarms_by_next_occurrence(notifications)
+        event_alarms_dict = filter_multiple_alarms_by_next_occurrence(notifications, config)
 
         for alarm, event in event_alarms_dict.values():
+            set_alarm_uid(alarm, event)
             log.debug('Found inactive alarm: %s at %s.', alarm['summary'], alarm['alarm_dt'])
             if (alarm['alarm_dt']-now).total_seconds() < 0:
                 seen_uids.append(alarm['uid'])
@@ -163,16 +189,19 @@ def main():
 
     config = parser.parse_args()
 
-    # create timezone from input if any
-    config.tz = None
-    if config.timezone is not None:
-        config.tz = pytz.timezone(config.timezone)
-
     # set logging level with given value
     if config.verbose:
         level = logging.DEBUG
         log.setLevel(level)
         handler.setLevel(level)
+
+    # create timezone from input if any
+    config.tz = None
+    if config.timezone is not None:
+        config.tz = pytz.timezone(config.timezone)
+        log.debug(f'Using timezone {config.tz}.')
+    else:
+        log.debug(f'Using system timezone.')
 
     run(config)
 
