@@ -30,6 +30,7 @@ def get_events(fn):
     # return all alarms of all events
     for event in es:
         for alarm in event.alarms:
+            alarm['uid'] = get_alarm_uid(alarm, event)
             notifications.append((alarm, event))
     return notifications
 
@@ -73,14 +74,14 @@ def filter_multiple_alarms_by_next_occurrence(notifications, config):
     return event_alarms_dict
 
 
-def set_alarm_uid(alarm, event):
+def get_alarm_uid(alarm, event):
     alarm_uid = alarm['uid']
     alarm_dt = str(alarm['alarm_dt'])
     if alarm_uid is not None:
         alarm_uid = str(alarm_uid)
     else:
         alarm_uid = f'{event.uid} - {alarm_dt}'
-    alarm['uid'] = alarm_uid
+    return alarm_uid
 
 
 def get_alarm_data(alarm, event):
@@ -91,7 +92,7 @@ def get_alarm_data(alarm, event):
     time_left = time_left[:time_left.rfind('.')]
     alarm_dt = str(alarm['alarm_dt'])
     data = dict(
-        summary=alarm['summary'],
+        summary=event.summary,
         description=alarm['description'],
         action=alarm['action'],
         alarm_since=alarm_dt,
@@ -138,17 +139,16 @@ def run(config):
         event_alarms_dict = filter_multiple_alarms_by_next_occurrence(notifications, config)
 
         for alarm, event in event_alarms_dict.values():
-            set_alarm_uid(alarm, event)
-            log.debug('Found inactive alarm: %s at %s.', alarm['summary'], alarm['alarm_dt'])
+            log.debug('Found alarm: %s at %s.', event.summary, alarm['alarm_dt'])
             if (alarm['alarm_dt']-now).total_seconds() < 0:
                 seen_uids.append(alarm['uid'])
                 if alarm['uid'] in alarms_data:
-                    log.debug('Active alarm "%s" was already handeled (%s).', alarm['summary'], alarm['uid'])
+                    log.debug('Active alarm "%s" was already handeled (%s).', event.summary, alarm['uid'])
                     continue
                 data = get_alarm_data(alarm, event)
                 log.info('Handling alarm with uid %s for %s in %s.',
                             str(alarm['uid']),
-                            str(alarm['summary']),
+                            str(event.summary),
                             str(event.time_left()))
                 send_mqtt(config, data)
                 alarms_data[alarm['uid']] = data
