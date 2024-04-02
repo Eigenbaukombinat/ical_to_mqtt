@@ -108,7 +108,7 @@ def now_tz(config):
 
 
 def send_mqtt(config, data):
-    mqtt_client = mqtt.Client(client_id='ical2mqtt for an event alarm')
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id='ical2mqtt for an event alarm')
     mqtt_client.enable_logger(logger=log)
     mqtt_client.connect(config.mqtt_broker)
     mqtt_client.publish(config.mqtt_topic, json.dumps(data))
